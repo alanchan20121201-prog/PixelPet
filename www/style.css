@@ -39,8 +39,8 @@
   --border-color: #5a5a7e;
   --border-radius: 6px;
 
-  --canvas-size: 384px;
-  --side-panel-width: 300px;
+  --canvas-size: 400px;
+  --side-panel-width: 320px;
 }
 
 * {
@@ -59,6 +59,11 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+/* 桌面 exe 語言已固定，隱藏語言切換列，避免玩家誤以為可切換 */
+html.exe-locked #lang-switcher {
+  display: none;
 }
 
 .overlay {
@@ -131,8 +136,8 @@ body {
 #top-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 20px;
+  gap: 12px;
+  padding: 7px 16px;      /* 縮小上下留白，把高度讓給主內容 */
   background-color: var(--bg-panel);
   border-bottom: 2px solid var(--border-color);
   flex-shrink: 0;
@@ -190,8 +195,10 @@ body {
 #game-main {
   flex: 1;
   display: flex;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px 14px;
+  justify-content: center;   /* 左右置中，避免內容擠在左邊 */
+  align-items: stretch;
   overflow: hidden;
 }
 
@@ -199,6 +206,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;   /* 垂直置中，善用多出的高度 */
   gap: 8px;
   flex-shrink: 0;
 }
@@ -255,51 +263,53 @@ body {
   font-weight: bold;
 }
 
-/* ===== 右側面板 ===== */
+/* ===== 右側面板 =====
+   整體緊湊化：原本內容高度超出視窗，導致「寵物狀態」被捲出畫面。
+   縮小間距與列高後，七項數值、親密度、經驗值、互動按鈕可全部同時顯示。 */
 #side-panel {
   width: var(--side-panel-width);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
+  gap: 8px;
+  overflow-y: auto;         /* 保留為保險，正常尺寸下不會出現捲動 */
 }
 
 #side-panel section {
   background-color: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  padding: 12px;
+  padding: 9px 10px;
 }
 
 #side-panel h2 {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-primary);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 
 /* ===== 數值條 ===== */
 .stat-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 4px;       /* 由 8px 縮到 4px，七列共省 28px */
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-sub);
-  width: 56px;
+  width: 52px;
   flex-shrink: 0;
 }
 
 .stat-bar {
   flex: 1;
-  height: 12px;
+  height: 10px;             /* 由 12px 縮到 10px，七列再省 14px */
   background-color: var(--bg-input);
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
 }
 
@@ -329,9 +339,9 @@ body {
 }
 
 .stat-value {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-main);
-  width: 32px;
+  width: 28px;
   text-align: right;
   flex-shrink: 0;
 }
@@ -402,27 +412,32 @@ body {
 }
 
 /* ===== 互動按鈕 ===== */
+/* 移除 flex:1：原本會把面板撐到全高，製造一大塊空白又擠壓上方區塊 */
 #actions-panel {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .action-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.action-group:last-child {
+  margin-bottom: 0;
 }
 
 #actions-panel button {
-  padding: 8px 12px;
-  font-size: 13px;
+  padding: 6px 8px;         /* 由 8px 12px 縮小，按鈕列更緊湊 */
+  font-size: 12px;
   background-color: var(--bg-card);
   color: var(--text-main);
   border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
   flex: 1;
-  min-width: 70px;
+  min-width: 60px;
   transition: background-color 0.15s;
 }
 
@@ -446,11 +461,11 @@ body {
   flex-shrink: 0;
   background-color: var(--bg-panel);
   border-top: 2px solid var(--border-color);
-  padding: 10px 20px;
+  padding: 8px 16px;
 }
 
 #dialogue-box {
-  min-height: 48px;
+  min-height: 40px;
   display: flex;
   align-items: center;
 }

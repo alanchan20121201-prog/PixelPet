@@ -10,6 +10,18 @@
     <link rel="icon" href="favicon.ico">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#7dd3c0">
+    <script>
+    // 桌面版由 Program.cs 在頁面建立前注入 window.__PETLANG__（該 exe 固定語言）。
+    // 瀏覽器測試時可用 ?lang=ja 等參數模擬對應語言的 exe。
+    // 有固定語言時替 <html> 加 exe-locked，CSS 會隱藏語言切換列，確保語言「不能改」。
+    (function () {
+        var m = /[?&]lang=([A-Za-z-]+)/.exec(location.search);
+        if (m) window.__PETLANG__ = m[1];
+        if (window.__PETLANG__) {
+            document.documentElement.className += ' exe-locked';
+        }
+    })();
+    </script>
 </head>
 <body>
     <div id="loading-screen">

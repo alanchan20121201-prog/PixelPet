@@ -1,122 +1,172 @@
 // ============================================================
 // Program.cs —— PixelPet 桌面外殼（C# WinForms + WebView2）
 // ------------------------------------------------------------
-// 用途：建立一個 Windows 視窗，內嵌 WebView2 控制項，
-//       載入本地 www/index.html，讓網頁遊戲以桌面軟件形式運行。
-//       打包成單檔 exe 後可直接雙擊啟動，無需瀏覽器。
+// 用途：建立 Windows 視窗，內嵌 WebView2 載入遊戲網頁。
+//       本版為「單檔 exe」：www 全部檔案已內嵌進組件，
+//       執行時解壓到本機快取，不需任何外部檔案。
 // 依賴：Microsoft.Web.WebView2 NuGet 套件
-//       www/ 目錄下的 HTML/CSS/JS/素材檔案
+//       編譯期內嵌的 www/ 資源（見 csproj EmbeddedResource）
 // ------------------------------------------------------------
-// 編譯：dotnet build -c Release
-// 輸出：build/Release/PixelPet.exe（連同 www/ 目錄）
+// 語言：由 csproj 的 PetLang 參數烘焙進 AssemblyMetadata，
+//       每個 exe 固定一種語言，玩家無法更改。
+// 編譯：dotnet publish -c Release -p:PetLang=zh-TW -o publish/zh-TW
 // ============================================================
 
 using System;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
 namespace PixelPet
 {
-    // MainForm：主視窗類別，繼承自 WinForms 的 Form
     public class MainForm : Form
     {
         private WebView2 webView;  // WebView2 控制項，用來顯示網頁
 
-        // ----------------------------------------------------------
-        // 建構子：設定視窗屬性並初始化 WebView2
-        // ----------------------------------------------------------
         public MainForm()
         {
-            // 視窗標題
-            this.Text = "PixelPet - 像素寵物";
+            this.Text = "PixelPet";
 
-            // 視窗大小（800×600，適合遊戲介面）
-            this.Width = 880;
-            this.Height = 680;
+            // 視窗放大到 940x760：緊湊化樣式後，七項狀態與所有按鈕可同時顯示
+            this.Width = 940;
+            this.Height = 760;
 
-            // 固定大小，不允許縮放（避免版面跑掉）
+            // 固定大小，避免版面被拉扯變形
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
-
-            // 置中顯示
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            // 載入圖標（icon.ico，在同目錄下）
+            // 圖標直接取自 exe 本身的資源（單檔模式不會有獨立 icon.ico）
             try
             {
-                string iconPath = Path.Combine(Application.StartupPath, "icon.ico");
-                if (File.Exists(iconPath))
-                {
-                    this.Icon = new System.Drawing.Icon(iconPath);
-                }
+                this.Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             }
-            catch { /* 圖標載入失敗不影響運行 */ }
+            catch { /* 取不到圖標不影響運行 */ }
 
-            // 建立 WebView2 控制項並填滿視窗
             webView = new WebView2();
             webView.Dock = DockStyle.Fill;
             this.Controls.Add(webView);
 
-            // 非同步初始化 WebView2
             _ = InitializeWebView();
         }
 
         // ----------------------------------------------------------
-        // InitializeWebView：非同步初始化 WebView2 並載入遊戲頁面
+        // BakedLang：讀取編譯時寫入組件中繼資料的語言代碼
+        // 參數：無
+        // 回傳：語言字串（zh-TW / zh-CN / en / ja）
+        // ----------------------------------------------------------
+        private static string BakedLang()
+        {
+            var attrs = typeof(Program).Assembly
+                .GetCustomAttributes<AssemblyMetadataAttribute>();
+            foreach (var a in attrs)
+            {
+                if (a.Key == "Lang" && !string.IsNullOrEmpty(a.Value))
+                {
+                    return a.Value;
+                }
+            }
+            return "zh-TW"; // 讀不到時的保險值
+        }
+
+        // ----------------------------------------------------------
+        // EnsureWww：把內嵌的 www 資源解壓到本機快取資料夾
+        // 參數：無
+        // 回傳：解壓後的 www 目錄路徑
+        // 說明：用 .ready 標記檔判斷是否已解壓，避免每次啟動重複寫入；
+        //       版本號寫在資料夾名稱，日後改素材只要換版本號就會重新解壓。
+        // ----------------------------------------------------------
+        private static string EnsureWww()
+        {
+            string baseDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PixelPet");
+            string wwwPath = Path.Combine(baseDir, "www-1.0.0");
+            string marker = Path.Combine(wwwPath, ".ready");
+
+            if (File.Exists(marker)) return wwwPath;
+
+            if (Directory.Exists(wwwPath))
+            {
+                Directory.Delete(wwwPath, true);
+            }
+            Directory.CreateDirectory(wwwPath);
+
+            var asm = typeof(Program).Assembly;
+            foreach (var name in asm.GetManifestResourceNames())
+            {
+                // 只處理我們內嵌的 www/ 資源
+                if (!name.StartsWith("www/", StringComparison.Ordinal)) continue;
+
+                // LogicalName 用 / 分隔；MSBuild 的 RecursiveDir 可能帶 \，一併正規化
+                string rel = name.Substring(4).Replace('\\', '/');
+                string dest = Path.Combine(wwwPath, rel.Replace('/', Path.DirectorySeparatorChar));
+                string dir = Path.GetDirectoryName(dest);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+                using (var src = asm.GetManifestResourceStream(name))
+                using (var dst = File.Create(dest))
+                {
+                    if (src != null) src.CopyTo(dst);
+                }
+            }
+
+            File.WriteAllText(marker, "ok");
+            return wwwPath;
+        }
+
+        // ----------------------------------------------------------
+        // InitializeWebView：初始化 WebView2 並載入遊戲頁面
         // ----------------------------------------------------------
         private async Task InitializeWebView()
         {
             try
             {
-                // 確保 WebView2 執行環境已安裝並初始化
-                await webView.EnsureCoreWebView2Async(null);
+                string lang = BakedLang();
+                string wwwPath = EnsureWww();
 
-                // 將 www 目錄映射為虛擬主機 pixelpet.app
-                // 這樣網頁可以用 https://pixelpet.app/index.html 存取
-                // 虛擬主機方式比 file:// 更好，localStorage 同音效都能正常運作
-                string wwwPath = Path.Combine(Application.StartupPath, "www");
+                // 四個語言 exe 共用同一個使用者資料資料夾，
+                // 因此 localStorage 存檔共用：換語言 exe 寵物資料不會消失。
+                string baseDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "PixelPet");
+                string userData = Path.Combine(baseDir, "userdata");
+
+                // 明確指定環境，避免 WebView2 在 exe 旁邊產生 *.WebView2 資料夾
+                var env = await CoreWebView2Environment.CreateAsync(null, userData);
+                await webView.EnsureCoreWebView2Async(env);
+
+                // 把解壓出來的 www 映射成虛擬主機，
+                // 比 file:// 可靠，localStorage 與音效都能正常運作
                 webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
                     "pixelpet.app",
                     wwwPath,
-                    Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow
+                    CoreWebView2HostResourceAccessKind.Allow
                 );
 
-                // 依 exe 檔名偵測語言
-                // 四個 exe 各以語言代碼命名：
-                //   PixelPet-zh-TW.exe → 繁體中文
-                //   PixelPet-zh-CN.exe → 簡體中文
-                //   PixelPet-en.exe    → English
-                //   PixelPet-ja.exe    → 日本語
-                string exeName = Path.GetFileNameWithoutExtension(Application.ExecutablePath);
-                string lang = "zh-TW"; // 預設繁體中文
-                if (exeName.Contains("zh-CN")) lang = "zh-CN";
-                else if (exeName.Contains("-en") || exeName.Contains("English")) lang = "en";
-                else if (exeName.Contains("-ja") || exeName.Contains("Japanese")) lang = "ja";
-
-                // 在頁面腳本執行前注入語言設定
-                // main.js 會讀取 window.__PETLANG__ 來設定預設語言
+                // 在頁面任何腳本執行前注入固定語言。
+                // index.html 的 head 腳本會據此隱藏語言切換列，
+                // main.js 會據此覆寫 I18n.currentLang。
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
                     "window.__PETLANG__ = '" + lang + "';"
                 );
 
-                // 關閉右鍵選單（桌面應用不需要）
+                // 桌面應用不需要這些瀏覽器功能
                 webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-
-                // 關閉開發者工具（正式版不需要）
                 webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
+                webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
 
-                // 載入遊戲首頁
                 webView.CoreWebView2.Navigate("https://pixelpet.app/index.html");
             }
             catch (Exception ex)
             {
-                // 初始化失敗時顯示錯誤訊息
                 MessageBox.Show(
-                    "WebView2 初始化失敗:\n" + ex.Message +
-                    "\n\n請確認已安裝 WebView2 Runtime。",
-                    "PixelPet 錯誤",
+                    "PixelPet 啟動失敗：\n" + ex.Message +
+                    "\n\n請確認已安裝 .NET 8 Desktop Runtime 與 WebView2 Runtime。",
+                    "PixelPet",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
@@ -132,11 +182,8 @@ namespace PixelPet
         [STAThread]
         static void Main()
         {
-            // WinForms 應用程式標準初始化
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
-            // 建立並顯示主視窗
             Application.Run(new MainForm());
         }
     }

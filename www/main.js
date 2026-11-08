@@ -9,10 +9,16 @@
 // ============================================================
 
 // 桌面外殼（Program.cs）會在頁面載入前注入 window.__PETLANG__
-// 用來設定預設語言（四個 exe 各自對應一種語言）
-if (window.__PETLANG__ && CONFIG.I18N[window.__PETLANG__]) {
-  CONFIG.DEFAULT_LANG = window.__PETLANG__;
-}
+// 每個 exe 各自對應一種語言，且該語言不可由玩家更改。
+// 注意：ui.js 載入時已把 I18n.currentLang 初始化成 CONFIG.DEFAULT_LANG，
+// 所以這裡必須同時覆寫 I18n.currentLang，否則語言注入不會生效。
+(function () {
+  var lang = window.__PETLANG__;
+  if (lang && CONFIG.I18N[lang]) {
+    CONFIG.DEFAULT_LANG = lang;
+    if (window.I18n) I18n.currentLang = lang;
+  }
+})();
 
 var Main = {
 

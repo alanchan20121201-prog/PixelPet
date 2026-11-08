@@ -32,6 +32,8 @@ var I18n = {
   // setLang：切換語言
   // 參數：lang（字串）—— 'zh-TW','zh-CN','en','ja'
   setLang: function (lang) {
+    // 桌面 exe 語言已鎖定，任何切換請求都直接忽略
+    if (window.__PETLANG__) return;
     if (!CONFIG.I18N[lang]) return;
     this.currentLang = lang;
     if (Pet.state) Pet.state.lang = lang;
@@ -99,8 +101,11 @@ var UI = {
       });
     }
 
-    // 從存檔讀取語言
-    if (Pet.state && Pet.state.lang) {
+    // 桌面 exe 的固定語言優先（覆蓋存檔裡的舊語言，確保不能改）
+    // 沒有固定語言時（純瀏覽器）才沿用存檔語言
+    if (window.__PETLANG__ && CONFIG.I18N[window.__PETLANG__]) {
+      I18n.currentLang = window.__PETLANG__;
+    } else if (Pet.state && Pet.state.lang) {
       I18n.currentLang = Pet.state.lang;
     }
     I18n.applyAll();

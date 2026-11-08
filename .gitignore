@@ -1,6 +1,7 @@
 # 編譯中間產物
 bin/
 obj/
+publish/
 
 # Visual Studio 暫存
 .vs/

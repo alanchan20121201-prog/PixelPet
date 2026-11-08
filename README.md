@@ -20,6 +20,8 @@ PixelPet 是一款像素風寵物養成模擬器。玩家在電腦上養一隻�
 | `PixelPet-en.exe` | English |
 | `PixelPet-ja.exe` | 日本語 |
 
+**每個 exe 都是單檔**：不需解壓、不需其他檔案，雙擊即可。語言已固定在 exe 內，無法切換。
+
 運行需安裝 .NET 8 Desktop Runtime 和 WebView2 Runtime（Windows 11 通常已內建 WebView2）。
 
 ---
@@ -38,6 +40,8 @@ PixelPet 是一款像素風寵物養成模擬器。玩家在電腦上養一隻�
 | `PixelPet-zh-CN.exe` | 簡體中文 |
 | `PixelPet-en.exe` | English |
 | `PixelPet-ja.exe` | 日本語 |
+
+**每個 exe 都是單檔**：不需解壓、不需其他檔案，雙擊即可。語言已固定在 exe 內，無法切換。
 
 運行需安裝 .NET 8 Desktop Runtime 和 WebView2 Runtime（Windows 11 通常已內建 WebView2）。
 
@@ -58,6 +62,8 @@ Choose the exe for your language from `build/Release/` and double-click to run:
 | `PixelPet-en.exe` | English |
 | `PixelPet-ja.exe` | 日本語 (Japanese) |
 
+**Each exe is a single file**: no extraction, no extra files needed — just double-click. The language is baked into the exe and cannot be changed.
+
 Requires .NET 8 Desktop Runtime and WebView2 Runtime (WebView2 is pre-installed on Windows 11).
 
 ---
@@ -77,6 +83,8 @@ PixelPetはピクセルアート風のペット育成シミュレーターです
 | `PixelPet-en.exe` | English |
 | `PixelPet-ja.exe` | 日本語 |
 
+**各 exe は単一ファイルです**：解凍や追加ファイルは不要、ダブルクリックで起動します。言語は exe に固定されており、変更できません。
+
 実行には .NET 8 Desktop Runtime と WebView2 Runtime が必要です（WebView2 は Windows 11 にプリインストールされています）。
 
 ---
@@ -91,7 +99,7 @@ PixelPetはピクセルアート風のペット育成シミュレーターです
 - **隨機事件**：每日 1–3 件，含稀有事件（彩虹、流星、神秘訪客）
 - **成長系統**：等級/經驗值、六個技能自動解鎖、六項圖鑑收集
 - **自動日記**：根據互動與事件自動記錄
-- **四種語言**：繁體中文、簡體中文、英文、日文（可即時切換）
+- **四種語言**：繁體中文、簡體中文、英文、日文（四個獨立 exe，各自固定語言）
 - **像素風視覺**：8-bit 精靈圖、場景圖、粒子特效、日夜濾鏡
 - **8-bit 音效**：三首循環 BGM（日/夜/散步）+ 九個音效
 - **本機存檔**：localStorage 自動存檔，關閉不遺失
@@ -103,7 +111,11 @@ PixelPetはピクセルアート風のペット育成シミュレーターです
 | 遊戲本體 | HTML + CSS + JavaScript（Canvas 2D、Web Audio API、localStorage） |
 | 桌面外殼 | C# WinForms + WebView2（.NET 8） |
 | 素材 | Python Pillow 生成像素圖、numpy 合成 8-bit 音效 |
-| 打包 | dotnet build → exe + www/ 目錄 |
+| 打包 | `dotnet publish` → **單檔 exe**（www 全部內嵌，不需外部檔案） |
+
+每個 exe 都是獨立單檔：網頁、圖片、音效全部內嵌在 exe 內，首次啟動時解壓到
+`%LOCALAPPDATA%\PixelPet\`。語言寫在組件中繼資料中，**無法切換、改檔名也不會變**。
+四個 exe 共用同一個 WebView2 使用者資料夾，所以換語言 exe 寵物存檔不會消失。
 
 ## 目錄結構 / Project Structure
 
@@ -146,7 +158,11 @@ PixelPet/
 │   ├── README.md
 │   ├── CHANGELOG.md
 │   └── screenshots/
-└── build/Release/          # 編譯輸出（四個語言 exe + www/）
+└── build/Release/          # 四個單檔 exe，不需任何其他檔案
+    ├── PixelPet-zh-TW.exe  # 繁體中文
+    ├── PixelPet-zh-CN.exe  # 简体中文
+    ├── PixelPet-en.exe     # English
+    └── PixelPet-ja.exe     # 日本語
 ```
 
 ## 編譯方法 / Build
@@ -158,22 +174,17 @@ PixelPet/
 
 ### 步驟
 
+每個語言各自 publish 一次（`PetLang` 參數會把語言寫進 exe 中繼資料）：
+
 ```bash
-# 還原套件
-dotnet restore
-
-# 編譯 Release 版本
-dotnet build -c Release
-
-# 輸出在 bin/Release/net8.0-windows/
-# 複製到 build/Release/ 並建立四個語言 exe：
-cp bin/Release/net8.0-windows/PixelPet.exe build/Release/PixelPet-zh-TW.exe
-cp bin/Release/net8.0-windows/PixelPet.exe build/Release/PixelPet-zh-CN.exe
-cp bin/Release/net8.0-windows/PixelPet.exe build/Release/PixelPet-en.exe
-cp bin/Release/net8.0-windows/PixelPet.exe build/Release/PixelPet-ja.exe
+dotnet publish PixelPet.csproj -c Release -p:PetLang=zh-TW -o publish/zh-TW
+dotnet publish PixelPet.csproj -c Release -p:PetLang=zh-CN -o publish/zh-CN
+dotnet publish PixelPet.csproj -c Release -p:PetLang=en    -o publish/en
+dotnet publish PixelPet.csproj -c Release -p:PetLang=ja    -o publish/ja
 ```
 
-四個 exe 共用同一份 `www/` 目錄和 WebView2 DLL，只是 exe 檔名不同，啟動時自動設定對應語言。
+每個 `publish/<lang>/` 只取 `PixelPet-<lang>.exe` 即可，其餘 `.xml` 說明檔可忽略。
+`www/` 已由 csproj 的 `EmbeddedResource` 內嵌進 exe，不需要跟著複製。
 
 ## 素材規格 / Assets
 
