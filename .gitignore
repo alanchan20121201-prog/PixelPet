@@ -1,0 +1,16 @@
+# 編譯中間產物
+bin/
+obj/
+
+# Visual Studio 暫存
+.vs/
+*.user
+*.suo
+
+# 作業系統檔案
+Thumbs.db
+.DS_Store
+
+# NuGet 暫存
+*.nupkg
+.nuget/

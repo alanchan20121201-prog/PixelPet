@@ -1,0 +1,41 @@
+<!-- PixelPet.csproj - C# 專案檔（SDK 風格）
+     用途：定義 C# 專案的編譯設定、依賴套件、目標框架。
+     使用 .NET 8 + Windows Forms + WebView2。
+     編譯指令：dotnet build -c Release -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- 目標框架：net8.0-windows 表示 .NET 8 Windows 版
+       UseWindowsForms=true 啟用 WinForms 支援 -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <AssemblyName>PixelPet</AssemblyName>
+    <RootNamespace>PixelPet</RootNamespace>
+    <Version>1.0.0</Version>
+    <Company>PixelPet</Company>
+    <Product>PixelPet</Product>
+    <Description>像素風寵物養成模擬器</Description>
+    <!-- 單檔發佈設定 -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <!-- NuGet 套件：WebView2 控制項 -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+  </ItemGroup>
+
+  <!-- 將 www 目錄全部內容複製到輸出目錄
+       這樣 exe 同 www 會在同一層，程式才能找到網頁檔案 -->
+  <ItemGroup>
+    <Content Include="www\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

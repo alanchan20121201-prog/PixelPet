@@ -1,0 +1,679 @@
+/* ============================================================
+   style.css —— PixelPet 全域樣式表
+   ------------------------------------------------------------
+   用途：定義全部介面的視覺樣式，包括版面佈局、色彩、
+         按鈕、數值條、彈窗遮罩、像素風 Canvas 渲染、
+         日夜濾鏡、語言切換按鈕等。
+   依賴：index.html 的元素 id 與 class 結構
+   對外提供：一套可直接套用的樣式規則
+   ============================================================ */
+
+/* ---------- CSS 變數：集中管理色彩，方便日後調整 ---------- */
+:root {
+  /* 背景層次（由深到淺） */
+  --bg-page: #2a2a3e;
+  --bg-panel: #3d3d5c;
+  --bg-card: #4a4a6e;
+  --bg-input: #35354f;
+
+  /* 文字 */
+  --text-main: #e8e8f0;
+  --text-sub: #a0a0c0;
+  --text-dim: #707090;
+
+  /* 主色系（薄荷綠，對應寵物身體色同 theme-color） */
+  --color-primary: #7dd3c0;
+  --color-primary-dark: #5ba89a;
+  --color-primary-light: #a8e6d8;
+
+  /* 強調色 */
+  --color-pink: #ff7ab0;
+  --color-yellow: #ffd750;
+  --color-blue: #7ab8ff;
+  --color-orange: #ffa45c;
+  --color-green: #a8e6cf;
+  --color-coral: #ff8c69;
+  --color-purple: #b794f4;
+  --color-red: #ff6b6b;
+
+  --border-color: #5a5a7e;
+  --border-radius: 6px;
+
+  --canvas-size: 384px;
+  --side-panel-width: 300px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Courier New', 'Microsoft JhengHei', 'MS Gothic', monospace;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  overflow: hidden;
+  user-select: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== 載入畫面 ===== */
+#loading-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: var(--bg-page);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+#loading-screen h2 {
+  color: var(--color-primary);
+  font-size: 24px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ===== 開始畫面 ===== */
+#start-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 998;
+}
+
+#start-screen h2 {
+  font-size: 40px;
+  color: var(--color-primary);
+}
+
+#start-screen p {
+  font-size: 16px;
+  color: var(--text-sub);
+}
+
+/* ===== 遊戲主容器 ===== */
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 頂部資訊列 ===== */
+#top-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background-color: var(--bg-panel);
+  border-bottom: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+#top-bar h1 {
+  font-size: 20px;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+#info-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+#info-bar span {
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+#pet-name { color: var(--color-yellow); }
+#pet-level { color: var(--color-primary); }
+
+#lang-switcher {
+  display: flex;
+  gap: 4px;
+}
+
+#lang-switcher button {
+  padding: 4px 10px;
+  font-size: 12px;
+  background-color: var(--bg-card);
+  color: var(--text-sub);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#lang-switcher button.active,
+#lang-switcher button.lang-btn.active {
+  background-color: var(--color-primary);
+  color: var(--bg-page);
+  border-color: var(--color-primary-dark);
+}
+
+#lang-switcher button:hover {
+  background-color: var(--color-primary-dark);
+  color: var(--text-main);
+}
+
+/* ===== 主遊戲區 ===== */
+#game-main {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#canvas-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#game-canvas {
+  width: var(--canvas-size);
+  height: var(--canvas-size);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background-color: #1a1a2e;
+  border: 3px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+#game-canvas.night-mode {
+  filter: brightness(0.65) hue-rotate(200deg) saturate(0.8);
+}
+
+#game-canvas.evening-mode {
+  filter: brightness(0.85) hue-rotate(-20deg) saturate(1.3);
+}
+
+#scene-switcher {
+  display: flex;
+  gap: 4px;
+}
+
+#scene-switcher button {
+  padding: 6px 14px;
+  font-size: 13px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#scene-switcher button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+#scene-switcher button.active {
+  background-color: var(--color-primary);
+  color: var(--bg-page);
+}
+
+#mood-indicator {
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+#mood-value {
+  color: var(--color-yellow);
+  font-weight: bold;
+}
+
+/* ===== 右側面板 ===== */
+#side-panel {
+  width: var(--side-panel-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+#side-panel section {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 12px;
+}
+
+#side-panel h2 {
+  font-size: 14px;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
+}
+
+/* ===== 數值條 ===== */
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 12px;
+  background-color: var(--bg-input);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  width: 50%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.stat-fill[data-stat="hunger"]   { background-color: var(--color-orange); }
+.stat-fill[data-stat="thirst"]   { background-color: var(--color-blue); }
+.stat-fill[data-stat="mood"]     { background-color: var(--color-yellow); }
+.stat-fill[data-stat="clean"]    { background-color: var(--color-green); }
+.stat-fill[data-stat="energy"]   { background-color: var(--color-coral); }
+.stat-fill[data-stat="health"]   { background-color: var(--color-pink); }
+.stat-fill[data-stat="sleep"]    { background-color: var(--color-purple); }
+
+.stat-fill.stat-low {
+  background-color: var(--color-red) !important;
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.stat-value {
+  font-size: 12px;
+  color: var(--text-main);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ===== 好感度 ===== */
+#affection-bar {
+  width: 100%;
+  height: 16px;
+  background-color: var(--bg-input);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+#affection-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--color-pink);
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+#affection-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: var(--text-main);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+/* ===== 互動按鈕 ===== */
+#actions-panel {
+  flex: 1;
+}
+
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+#actions-panel button {
+  padding: 8px 12px;
+  font-size: 13px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 70px;
+  transition: background-color 0.15s;
+}
+
+#actions-panel button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+#actions-panel button:active {
+  transform: translateY(1px);
+  background-color: var(--color-primary);
+}
+
+#actions-panel button:disabled {
+  background-color: var(--bg-input);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+/* ===== 底部面板 ===== */
+#bottom-panel {
+  flex-shrink: 0;
+  background-color: var(--bg-panel);
+  border-top: 2px solid var(--border-color);
+  padding: 10px 20px;
+}
+
+#dialogue-box {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+#dialogue-text {
+  font-size: 14px;
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+#dialogue-text.typing::after {
+  content: '\258B';
+  animation: blink 0.6s infinite;
+  color: var(--color-primary);
+}
+
+/* ===== 事件面板 ===== */
+#event-box {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: var(--bg-card);
+  border: 2px solid var(--color-yellow);
+  border-radius: var(--border-radius);
+}
+
+#event-title {
+  font-size: 15px;
+  color: var(--color-yellow);
+  margin-bottom: 6px;
+}
+
+#event-desc {
+  font-size: 13px;
+  color: var(--text-main);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+#event-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#event-choices button {
+  padding: 8px 12px;
+  font-size: 13px;
+  background-color: var(--bg-panel);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+#event-choices button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+/* ===== 彈窗面板 ===== */
+#diary-panel.overlay,
+#skills-panel.overlay,
+#dex-panel.overlay,
+#share-panel.overlay {
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 20px;
+}
+
+#diary-panel h3,
+#skills-panel h3,
+#dex-panel h3,
+#share-panel h3 {
+  font-size: 18px;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+#diary-entries,
+#skills-list,
+#dex-list {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  max-width: 500px;
+  width: 80vw;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* ===== 日記條目 ===== */
+.diary-entry {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.diary-entry:last-child {
+  border-bottom: none;
+}
+
+.diary-date {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.diary-text {
+  font-size: 13px;
+  color: var(--text-main);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* ===== 技能卡片 ===== */
+.skill-card {
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.skill-card.skill-unlocked {
+  border-color: var(--color-primary);
+}
+
+.skill-card.skill-locked {
+  opacity: 0.5;
+}
+
+.skill-name {
+  font-size: 14px;
+  color: var(--color-primary);
+}
+
+.skill-card.skill-locked .skill-name {
+  color: var(--text-dim);
+}
+
+.skill-desc {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-top: 4px;
+}
+
+/* ===== 圖鑑條目 ===== */
+.dex-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dex-entry:last-child {
+  border-bottom: none;
+}
+
+.dex-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+}
+
+.dex-name {
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.dex-entry.dex-locked .dex-name {
+  color: var(--text-dim);
+}
+
+/* ===== 分享卡 ===== */
+#share-canvas {
+  width: 300px;
+  height: 400px;
+  image-rendering: pixelated;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: #fff;
+}
+
+#share-panel button {
+  margin-top: 10px;
+}
+
+/* ===== 通用按鈕 ===== */
+button {
+  font-family: inherit;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+button#diary-close,
+button#skills-close,
+button#dex-close,
+button#share-close,
+button#share-download {
+  display: block;
+  margin: 12px auto 0;
+  padding: 8px 20px;
+  font-size: 13px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button#diary-close:hover,
+button#skills-close:hover,
+button#dex-close:hover,
+button#share-close:hover,
+button#share-download:hover {
+  background-color: var(--color-primary-dark);
+}
+
+button#share-download {
+  background-color: var(--color-primary);
+  color: var(--bg-page);
+  border-color: var(--color-primary-dark);
+}
+
+button#share-download:hover {
+  background-color: var(--color-primary-light);
+}
+
+/* ===== 開始畫面按鈕 ===== */
+#btn-new-game,
+#btn-continue {
+  padding: 12px 32px;
+  font-size: 16px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+#btn-new-game:hover,
+#btn-continue:hover {
+  background-color: var(--color-primary);
+  color: var(--bg-page);
+}
+
+/* ===== 捲動條 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bg-input);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primary-dark);
+}
