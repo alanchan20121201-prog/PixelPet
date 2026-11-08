@@ -154,6 +154,28 @@ var UI = {
     if (affFill) affFill.style.width = s.affection + '%';
     if (affText) affText.textContent = s.affection + '/' + CONFIG.AFFECTION_MAX;
 
+    // 經驗值進度條
+    // need 為升到下一級所需經驗；已達最高等級時 need=0，進度顯示為滿
+    var need = Pet.expToNextLevel();
+    var expFill = document.getElementById('exp-fill');
+    var expText = document.getElementById('exp-text');
+    if (expFill) {
+      // 百分比上限 100，避免 exp 溢出時條超出範圍
+      var pct = need > 0 ? Math.min(100, Math.round((s.exp / need) * 100)) : 100;
+      expFill.style.width = pct + '%';
+      // 接近升級時改用黃色提示
+      if (pct >= 80) {
+        expFill.classList.add('exp-near');
+      } else {
+        expFill.classList.remove('exp-near');
+      }
+    }
+    if (expText) {
+      expText.textContent = need > 0
+        ? Math.round(s.exp) + ' / ' + need
+        : I18n.t('msg.max_level');
+    }
+
     // 數值條
     Stats.update();
 

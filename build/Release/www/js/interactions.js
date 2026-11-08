@@ -133,8 +133,10 @@ var Interactions = {
     }
 
     // 特殊處理：散步
+    // 注意：提前 return 前必須更新 UI，否則等級/數值/經驗條不會立即變化
     if (action === 'walk') {
       this._doWalk();
+      UI.update();
       return;
     }
 
@@ -146,6 +148,7 @@ var Interactions = {
       if (typeof Audio2 !== 'undefined') Audio2.playSFX('sfxSleep');
       this._showActionDialogue(action);
       if (typeof Diary !== 'undefined') Diary.addEntry('diary.entry_sleep');
+      UI.update();
       return;
     }
 

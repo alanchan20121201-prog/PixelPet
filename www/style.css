@@ -364,6 +364,43 @@ body {
   text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
+/* ===== 經驗值進度條 ===== */
+/* 與親密度條同結構，但用藍色區分，避免兩者混淆 */
+#exp-bar {
+  width: 100%;
+  height: 16px;
+  background-color: var(--bg-input);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 填充：JS 依 exp / 升級所需 exp 設定 width */
+#exp-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--color-blue);
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+/* 接近升級（80% 以上）轉黃色提示 */
+#exp-fill.exp-near {
+  background-color: var(--color-yellow);
+}
+
+/* 經驗值數字，疊在進度條中間 */
+#exp-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: var(--text-main);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  white-space: nowrap;
+}
+
 /* ===== 互動按鈕 ===== */
 #actions-panel {
   flex: 1;

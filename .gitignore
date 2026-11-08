@@ -14,3 +14,7 @@ Thumbs.db
 # NuGet 暫存
 *.nupkg
 .nuget/
+
+# WebView2 執行時產生的使用者資料資料夾
+*.WebView2/
+*.exe.WebView2/

@@ -228,6 +228,19 @@ var Pet = {
   },
 
   // ----------------------------------------------------------
+  // expToNextLevel：取得升到下一級所需的經驗值
+  // 參數：無（讀取 this.state.level）
+  // 回傳：數字（已達最高等級時回傳 0）
+  // 公式與 addExp 共用，避免兩邊計算不一致
+  // ----------------------------------------------------------
+  expToNextLevel: function () {
+    if (!this.state) return 0;
+    if (this.state.level >= CONFIG.MAX_LEVEL) return 0;
+    // LEVEL_BASE * level^LEVEL_EXP，例如 Lv.1 需 100、Lv.2 需 282
+    return Math.floor(CONFIG.LEVEL_BASE * Math.pow(this.state.level, CONFIG.LEVEL_EXP));
+  },
+
+  // ----------------------------------------------------------
   // addExp：增加經驗值，達標自動升級
   // 參數：n（數字）—— 經驗值增加量
   // 回傳：true 如果升級了 / false 否則
@@ -237,11 +250,11 @@ var Pet = {
     this.state.exp += n;
     var leveledUp = false;
 
-    // 升級判定：所需經驗 = LEVEL_BASE * level^LEVEL_EXP
+    // 用 while 而非 if：一次獲得大量經驗時可連續升多級
     while (this.state.level < CONFIG.MAX_LEVEL) {
-      var need = Math.floor(CONFIG.LEVEL_BASE * Math.pow(this.state.level, CONFIG.LEVEL_EXP));
+      var need = this.expToNextLevel();
       if (this.state.exp >= need) {
-        this.state.exp -= need;
+        this.state.exp -= need; // 扣除本級所需，剩餘留給下一級
         this.state.level++;
         leveledUp = true;
       } else {

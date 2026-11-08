@@ -255,6 +255,7 @@ const CONFIG = {
       'label.level': '等級',
       'panel.stats': '寵物狀態',
       'panel.affection': '親密度',
+      'panel.exp': '經驗值',
       'panel.actions': '互動',
       'action.feed': '餵食',
       'action.drink': '喝水',
@@ -366,7 +367,8 @@ const CONFIG = {
       'msg.no_energy': '體力不足，讓寵物休息一下吧。',
       'msg.skill_locked': '等級不足，尚未解鎖此技能。',
       'msg.skill_unlocked': '解鎖新技能！',
-      'msg.dex_new': '圖鑑新增一筆記錄！'
+      'msg.dex_new': '圖鑑新增一筆記錄！',
+      'msg.max_level': '已達最高等級'
     },
 
     'zh-CN': {
@@ -390,6 +392,7 @@ const CONFIG = {
       'label.level': '等级',
       'panel.stats': '宠物状态',
       'panel.affection': '亲密度',
+      'panel.exp': '经验值',
       'panel.actions': '互动',
       'action.feed': '喂食',
       'action.drink': '喝水',
@@ -492,7 +495,8 @@ const CONFIG = {
       'msg.no_energy': '体力不足，让宠物休息一下吧。',
       'msg.skill_locked': '等级不足，尚未解锁此技能。',
       'msg.skill_unlocked': '解锁新技能！',
-      'msg.dex_new': '图鉴新增一笔记录！'
+      'msg.dex_new': '图鉴新增一笔记录！',
+      'msg.max_level': '已达最高等级'
     },
 
     en: {
@@ -516,6 +520,7 @@ const CONFIG = {
       'label.level': 'Lv',
       'panel.stats': 'Pet Status',
       'panel.affection': 'Affection',
+      'panel.exp': 'EXP',
       'panel.actions': 'Actions',
       'action.feed': 'Feed',
       'action.drink': 'Drink',
@@ -618,7 +623,8 @@ const CONFIG = {
       'msg.no_energy': 'Not enough energy. Let your pet rest.',
       'msg.skill_locked': 'Level too low. Skill not unlocked.',
       'msg.skill_unlocked': 'New skill unlocked!',
-      'msg.dex_new': 'New encyclopedia entry added!'
+      'msg.dex_new': 'New encyclopedia entry added!',
+      'msg.max_level': 'MAX LEVEL'
     },
 
     ja: {
@@ -642,6 +648,7 @@ const CONFIG = {
       'label.level': 'レベル',
       'panel.stats': 'ペットステータス',
       'panel.affection': '親密度',
+      'panel.exp': '経験値',
       'panel.actions': 'アクション',
       'action.feed': '餌やり',
       'action.drink': '水やり',
@@ -744,7 +751,8 @@ const CONFIG = {
       'msg.no_energy': '体力不足。ペットを休ませて。',
       'msg.skill_locked': 'レベル不足。スキル未解放。',
       'msg.skill_unlocked': '新スキル解放！',
-      'msg.dex_new': '図鑑に新記録追加！'
+      'msg.dex_new': '図鑑に新記録追加！',
+      'msg.max_level': '最高レベル到達'
     }
   }
 };
