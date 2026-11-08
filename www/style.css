@@ -164,6 +164,53 @@ html.exe-locked #lang-switcher {
 #pet-name { color: var(--color-yellow); }
 #pet-level { color: var(--color-primary); }
 
+/* 全螢幕按鈕：與語言按鈕同風格，放頂部列最右 */
+.win-btn {
+  padding: 4px 10px;
+  font-size: 16px;
+  line-height: 1;
+  background-color: var(--bg-card);
+  color: var(--text-sub);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.win-btn:hover {
+  background-color: var(--color-primary-dark);
+  color: var(--text-main);
+}
+
+/* 靜音狀態：音符加刪除線並變暗 */
+.win-btn.is-muted {
+  text-decoration: line-through;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+/* 音量控制區：靜音鈕 + 滑桿 + 百分比 */
+#volume-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#volume-slider {
+  width: 84px;
+  height: 6px;
+  cursor: pointer;
+  accent-color: var(--color-primary); /* 現代瀏覽器直接用主色渲染滑桿 */
+}
+
+#volume-value {
+  font-size: 11px;
+  color: var(--text-sub);
+  width: 24px;
+  text-align: right;
+}
+
 #lang-switcher {
   display: flex;
   gap: 4px;
@@ -194,10 +241,11 @@ html.exe-locked #lang-switcher {
 /* ===== 主遊戲區 ===== */
 #game-main {
   flex: 1;
+  min-height: 0;
   display: flex;
-  gap: 10px;
-  padding: 10px 14px;
-  justify-content: center;   /* 左右置中，避免內容擠在左邊 */
+  gap: clamp(10px, 1.6vw, 30px);
+  padding: clamp(8px, 1.1vw, 20px) clamp(10px, 1.4vw, 26px);
+  justify-content: center;
   align-items: stretch;
   overflow: hidden;
 }
@@ -206,14 +254,20 @@ html.exe-locked #lang-switcher {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;   /* 垂直置中，善用多出的高度 */
+  justify-content: center;
   gap: 8px;
-  flex-shrink: 0;
+  min-width: 0;
+  flex: 1 1 auto;            /* 吃掉剩餘寬度，讓畫布能隨視窗放大 */
 }
 
+/* 畫布流體放大：全螢幕時不再是小小的 640px，而是盡量填滿可用空間。
+   calc(100vh - 170px) 扣掉頂部列、底部列、場景鈕與心情；
+   calc(100vw - 側欄 - 間距) 扣掉右側欄；兩者取小避免任一方向溢出。
+   上限 1000px 避免 4K 螢幕上畫布過度巨大，下限 220px 保證小視窗可用。 */
 #game-canvas {
-  width: var(--canvas-size);
-  height: var(--canvas-size);
+  width: clamp(220px, min(calc(100vh - 170px), calc(100vw - 460px)), 1000px);
+  aspect-ratio: 1 / 1;
+  height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   background-color: #1a1a2e;
@@ -267,8 +321,9 @@ html.exe-locked #lang-switcher {
    整體緊湊化：原本內容高度超出視窗，導致「寵物狀態」被捲出畫面。
    縮小間距與列高後，七項數值、親密度、經驗值、互動按鈕可全部同時顯示。 */
 #side-panel {
-  width: var(--side-panel-width);
-  flex-shrink: 0;
+  /* 寬度隨視窗放大：小視窗維持 320px，全螢幕放大到 460px */
+  width: clamp(320px, 24vw, 460px);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -728,4 +783,122 @@ button#share-download:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-primary-dark);
+}
+
+/* ============================================================
+   響應式：視窗縮小時保持全部資訊可見
+   ============================================================ */
+
+/* 矮視窗（高度 < 780px）：七項數值改成兩欄，省下約 4 列高度 */
+@media (max-height: 780px) {
+  #stats-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 10px;
+  }
+
+  .stat-row {
+    margin-bottom: 3px;
+    gap: 4px;
+  }
+
+  .stat-label {
+    width: 46px;
+    font-size: 10px;
+  }
+
+  .stat-value {
+    width: 24px;
+    font-size: 10px;
+  }
+
+  #side-panel {
+    gap: 6px;
+  }
+
+  #side-panel section {
+    padding: 7px 9px;
+  }
+
+  #side-panel h2 {
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+    font-size: 12px;
+  }
+
+  .action-group {
+    margin-bottom: 5px;
+    gap: 4px;
+  }
+
+  #actions-panel button {
+    padding: 5px 6px;
+    font-size: 11px;
+    min-width: 54px;
+  }
+}
+
+/* 更矮（< 640px）：再壓縮，並讓側欄可捲動作為最後保險 */
+@media (max-height: 640px) {
+  #top-bar { padding: 4px 12px; gap: 8px; }
+  #volume-slider { width: 60px; }
+  #bottom-panel { padding: 5px 12px; }
+  #dialogue-box { min-height: 30px; }
+  #dialogue-text { font-size: 12px; }
+  #game-main { padding: 6px 10px; }
+  #canvas-area { gap: 4px; }
+  #scene-switcher button { padding: 4px 10px; font-size: 11px; }
+  #mood-indicator { font-size: 12px; }
+  #affection-bar, #exp-bar { height: 13px; }
+  .stat-row { margin-bottom: 2px; }
+}
+
+/* ============================================================
+   大視窗 / 全螢幕：內容等比放大，不只視窗變大
+   畫布與側欄已由流體寬度放大，這裡同步放大字體與間距，
+   讓整體比例協調、填滿畫面但不貼邊。
+   用 min-height 限制，避免與上面的「矮視窗緊湊」規則互相衝突。
+   ============================================================ */
+@media (min-width: 1400px) and (min-height: 820px) {
+  #top-bar h1 { font-size: 26px; }
+  #info-bar span { font-size: 18px; }
+  #top-bar { padding: 10px 22px; }
+
+  #side-panel { gap: 14px; }
+  #side-panel section { padding: 14px 16px; }
+  #side-panel h2 { font-size: 18px; margin-bottom: 11px; padding-bottom: 7px; }
+
+  .stat-row { margin-bottom: 9px; gap: 9px; }
+  .stat-label { font-size: 14px; width: 66px; }
+  .stat-value { font-size: 14px; width: 34px; }
+  .stat-bar { height: 15px; }
+
+  #affection-bar, #exp-bar { height: 20px; }
+  #affection-text, #exp-text { font-size: 14px; }
+
+  .action-group { gap: 8px; margin-bottom: 10px; }
+  #actions-panel button {
+    padding: 12px 16px;
+    font-size: 16px;
+    min-width: 84px;
+  }
+
+  #scene-switcher button { padding: 9px 20px; font-size: 15px; }
+  #mood-indicator { font-size: 17px; }
+  #canvas-area { gap: 12px; }
+
+  #dialogue-text { font-size: 18px; }
+  #dialogue-box { min-height: 54px; }
+  #volume-slider { width: 110px; }
+}
+
+/* 超大螢幕（例如 2K/4K 全螢幕）：再放大一階，避免內容相對太小 */
+@media (min-width: 2000px) and (min-height: 1100px) {
+  #side-panel h2 { font-size: 21px; }
+  .stat-label, .stat-value, #affection-text, #exp-text { font-size: 16px; }
+  .stat-bar, #affection-bar, #exp-bar { height: 22px; }
+  #actions-panel button { font-size: 18px; padding: 15px 20px; }
+  #scene-switcher button { font-size: 17px; padding: 11px 24px; }
+  #dialogue-text { font-size: 20px; }
+  #top-bar h1 { font-size: 30px; }
 }

@@ -13,6 +13,7 @@
 // ============================================================
 
 using System;
+using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -26,18 +27,33 @@ namespace PixelPet
     {
         private WebView2 webView;  // WebView2 控制項，用來顯示網頁
 
+        // 全螢幕還原用的狀態：記住切換前的邊框樣式與視窗範圍
+        private bool isFullScreen = false;
+        private FormBorderStyle savedBorder;
+        private Rectangle savedBounds;
+        private FormWindowState savedState;
+
         public MainForm()
         {
             this.Text = "PixelPet";
 
-            // 視窗放大到 940x760：緊湊化樣式後，七項狀態與所有按鈕可同時顯示
+            // 預設大小 940x760；改為可調整大小，玩家可自行拖曳縮小或放大
             this.Width = 940;
             this.Height = 760;
 
-            // 固定大小，避免版面被拉扯變形
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
+            // Sizable 允許拖曳邊框調整大小，同時保留最小化/最大化按鈕
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.MaximizeBox = true;
+            this.MinimizeBox = true;
+
+            // 最小尺寸：低於此尺寸版面會過擠，限制住避免破版
+            // 760x560 足夠容納兩欄緊湊排版後的側欄
+            this.MinimumSize = new System.Drawing.Size(760, 560);
             this.StartPosition = FormStartPosition.CenterScreen;
+
+            // 讓表單先收到按鍵（WebView2 有焦點時仍需靠加速器事件，見下）
+            this.KeyPreview = true;
+            this.KeyDown += MainForm_KeyDown;
 
             // 圖標直接取自 exe 本身的資源（單檔模式不會有獨立 icon.ico）
             try
@@ -51,6 +67,76 @@ namespace PixelPet
             this.Controls.Add(webView);
 
             _ = InitializeWebView();
+        }
+
+        // ----------------------------------------------------------
+        // MainForm_KeyDown：F11 切換全螢幕，Esc 退出全螢幕
+        // 參數：sender、e（KeyEventArgs）
+        // 回傳：無
+        // ----------------------------------------------------------
+        private void MainForm_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F11)
+            {
+                e.Handled = true;
+                ToggleFullScreen();
+            }
+            else if (e.KeyCode == Keys.Escape && isFullScreen)
+            {
+                e.Handled = true;
+                ExitFullScreen();
+            }
+        }
+
+        // ----------------------------------------------------------
+        // ToggleFullScreen：在「全螢幕」與「一般視窗」之間切換
+        // 參數：無
+        // 回傳：無
+        // 說明：全螢幕 = 無邊框 + 覆蓋整個螢幕；退出時還原原本
+        //       的邊框、大小、位置與最大化狀態，不會改變玩家原本的視窗配置。
+        // ----------------------------------------------------------
+        public void ToggleFullScreen()
+        {
+            if (isFullScreen) ExitFullScreen();
+            else EnterFullScreen();
+        }
+
+        private void EnterFullScreen()
+        {
+            // 先記住現況
+            savedBorder = this.FormBorderStyle;
+            savedState = this.WindowState;
+            if (this.WindowState == FormWindowState.Normal)
+            {
+                savedBounds = this.Bounds;
+            }
+            else
+            {
+                // 最大化/最小化時 Bounds 不是還原後的位置，改用 RestoreBounds
+                savedBounds = this.RestoreBounds;
+            }
+
+            this.WindowState = FormWindowState.Normal;
+            this.FormBorderStyle = FormBorderStyle.None;
+            // 覆蓋游標所在的那個螢幕（支援多螢幕）
+            var screen = Screen.FromHandle(this.Handle);
+            this.Bounds = screen.Bounds;
+            this.TopMost = true;
+            isFullScreen = true;
+        }
+
+        private void ExitFullScreen()
+        {
+            this.TopMost = false;
+            this.FormBorderStyle = savedBorder;
+            this.WindowState = FormWindowState.Normal;
+            this.Bounds = savedBounds;
+            // 若原本是最大化，還原成最大化
+            if (savedState == FormWindowState.Maximized)
+            {
+                this.WindowState = FormWindowState.Maximized;
+            }
+            isFullScreen = false;
         }
 
         // ----------------------------------------------------------
@@ -159,6 +245,13 @@ namespace PixelPet
                 webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
                 webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
 
+                // 允許網頁用 window.chrome.webview.postMessage 通知視窗行為
+                // （全螢幕按鈕、F11/Esc 快捷鍵）
+                webView.CoreWebView2.Settings.IsWebMessageEnabled = true;
+                webView.CoreWebView2.WebMessageReceived += OnWebMessage;
+
+                // 攔截瀏覽器端的 F11/Esc 由網頁 JS 負責（見 ui.js），
+                // JS 會 preventDefault 避免 WebView2 自己進全螢幕造成狀態錯亂。
                 webView.CoreWebView2.Navigate("https://pixelpet.app/index.html");
             }
             catch (Exception ex)
@@ -170,6 +263,26 @@ namespace PixelPet
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
+            }
+        }
+
+        // ----------------------------------------------------------
+        // OnWebMessage：處理網頁傳來的視窗控制訊息
+        // 參數：sender、e（CoreWebView2WebMessageReceivedEventArgs）
+        // 回傳：無
+        // 支援訊息：'toggleFullscreen'、'enterFullscreen'、'exitFullscreen'
+        // ----------------------------------------------------------
+        private void OnWebMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            string msg;
+            try { msg = e.TryGetWebMessageAsString(); }
+            catch { return; }
+
+            switch (msg)
+            {
+                case "toggleFullscreen": ToggleFullScreen(); break;
+                case "enterFullscreen":  EnterFullScreen();  break;
+                case "exitFullscreen":   if (isFullScreen) ExitFullScreen(); break;
             }
         }
     }

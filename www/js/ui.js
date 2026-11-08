@@ -101,6 +101,12 @@ var UI = {
       });
     }
 
+    // 全螢幕按鈕與快捷鍵
+    self._initFullscreen();
+
+    // 音量滑桿與靜音按鈕
+    self._initVolume();
+
     // 桌面 exe 的固定語言優先（覆蓋存檔裡的舊語言，確保不能改）
     // 沒有固定語言時（純瀏覽器）才沿用存檔語言
     if (window.__PETLANG__ && CONFIG.I18N[window.__PETLANG__]) {
@@ -109,6 +115,101 @@ var UI = {
       I18n.currentLang = Pet.state.lang;
     }
     I18n.applyAll();
+  },
+
+  // ----------------------------------------------------------
+  // _initFullscreen：綁定全螢幕按鈕與 F11 / Esc 快捷鍵
+  // 參數：無
+  // 回傳：無
+  // 說明：桌面版走 WebView2 的 postMessage 請 C# 切換視窗；
+  //       純瀏覽器版用 Fullscreen API 自行處理，兩邊都能用。
+  // ----------------------------------------------------------
+  _initFullscreen: function () {
+    var hasHost = !!(window.chrome && window.chrome.webview &&
+                     window.chrome.webview.postMessage);
+
+    function requestToggle() {
+      if (hasHost) {
+        window.chrome.webview.postMessage('toggleFullscreen');
+      } else if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
+    }
+
+    // 全螢幕按鈕
+    var btn = document.getElementById('btn-fullscreen');
+    if (btn) {
+      btn.addEventListener('click', requestToggle);
+      // title 用目前語言的說明
+      btn.title = I18n.t('title.fullscreen');
+    }
+
+    // F11 切換、Esc 退出（桌面版由 C# 處理，這裡仍攔截避免瀏覽器自己動作）
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        if (hasHost) {
+          window.chrome.webview.postMessage('toggleFullscreen');
+        } else {
+          requestToggle();
+        }
+      } else if (e.key === 'Escape' && hasHost && document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    });
+  },
+
+  // ----------------------------------------------------------
+  // _initVolume：綁定音量滑桿與靜音按鈕
+  // 參數：無
+  // 回傳：無
+  // 說明：初值來自 Audio2（已從 localStorage 讀取），
+  //       變動時即時套用並寫回設定，重開軟件仍保留。
+  // ----------------------------------------------------------
+  _initVolume: function () {
+    var slider = document.getElementById('volume-slider');
+    var valueEl = document.getElementById('volume-value');
+    var muteBtn = document.getElementById('btn-mute');
+
+    function syncMuteButton() {
+      if (!muteBtn) return;
+      // 靜音時把音符符號加刪除線並變暗，直觀表示無聲
+      if (Audio2.isMuted()) {
+        muteBtn.classList.add('is-muted');
+      } else {
+        muteBtn.classList.remove('is-muted');
+      }
+      muteBtn.title = I18n.t('title.mute');
+    }
+
+    if (slider) {
+      // 套用已儲存的音量到滑桿
+      slider.value = Math.round(Audio2.getVolume() * 100);
+      if (valueEl) valueEl.textContent = slider.value;
+      slider.title = I18n.t('title.volume');
+
+      slider.addEventListener('input', function () {
+        var pct = parseInt(this.value, 10);
+        Audio2.setVolume(pct);          // setVolume 接受 0–100 會自動換算
+        if (valueEl) valueEl.textContent = pct;
+        // 拉到 0 以上視為想聽聲音，自動解除靜音
+        if (pct > 0 && Audio2.isMuted()) {
+          Audio2.setMuted(false);
+          syncMuteButton();
+        }
+      });
+    }
+
+    if (muteBtn) {
+      muteBtn.addEventListener('click', function () {
+        Audio2.toggleMute();
+        syncMuteButton();
+      });
+    }
+
+    syncMuteButton();
   },
 
   // ----------------------------------------------------------

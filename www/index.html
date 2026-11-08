@@ -72,6 +72,14 @@
                     日本語
                 </button>
             </div>
+            <!-- 音量控制：靜音按鈕 + 滑桿，設定會記住 -->
+            <div id="volume-control">
+                <button id="btn-mute" class="win-btn" title="靜音">&#x266B;</button>
+                <input type="range" id="volume-slider" min="0" max="100" value="60" title="音量">
+                <span id="volume-value">60</span>
+            </div>
+            <!-- 全螢幕按鈕：符號通用不需翻譯，title 由 I18n 提供 -->
+            <button id="btn-fullscreen" class="win-btn" title="全螢幕 (F11)">&#x26F6;</button>
         </header>
         <main id="game-main">
             <div id="canvas-area">

@@ -16,6 +16,8 @@ const CONFIG = {
   VERSION: '1.0.0',
   // SAVE_KEY：localStorage 存檔的 key 名
   SAVE_KEY: 'pixelpet_save',
+  // 音量/靜音設定獨立存放，不跟寵物存檔綁在一起
+  AUDIO_SETTINGS_KEY: 'pixelpet_audio',
 
   // ----------------------------------------------------------
   // 七項生理數值定義
@@ -246,6 +248,9 @@ const CONFIG = {
       'scene.beach': '海灘',
       'scene.forest': '森林',
       'label.mood': '情緒',
+      'title.fullscreen': '全螢幕 (F11)',
+      'title.volume': '音量',
+      'title.mute': '靜音 / 取消靜音',
       'label.event': '事件',
       'label.event-desc': '',
       'label.diary': '日誌',
@@ -383,6 +388,9 @@ const CONFIG = {
       'scene.beach': '海滩',
       'scene.forest': '森林',
       'label.mood': '情绪',
+      'title.fullscreen': '全屏 (F11)',
+      'title.volume': '音量',
+      'title.mute': '静音 / 取消静音',
       'label.event': '事件',
       'label.event-desc': '',
       'label.diary': '日志',
@@ -511,6 +519,9 @@ const CONFIG = {
       'scene.beach': 'Beach',
       'scene.forest': 'Forest',
       'label.mood': 'Mood',
+      'title.fullscreen': 'Fullscreen (F11)',
+      'title.volume': 'Volume',
+      'title.mute': 'Mute / Unmute',
       'label.event': 'Event',
       'label.event-desc': '',
       'label.diary': 'Diary',
@@ -639,6 +650,9 @@ const CONFIG = {
       'scene.beach': '海辺',
       'scene.forest': '森',
       'label.mood': '気分',
+      'title.fullscreen': '全画面 (F11)',
+      'title.volume': '音量',
+      'title.mute': 'ミュート / 解除',
       'label.event': 'イベント',
       'label.event-desc': '',
       'label.diary': '日記',
