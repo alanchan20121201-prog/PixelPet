@@ -22,7 +22,7 @@ var Main = {
 
   // ----------------------------------------------------------
   // start：遊戲啟動入口
-  // 由 window.onload 呼叫
+  // 由頁面底部的啟動邏輯呼叫
   // 流程：載入素材 → 顯示開始畫面 → 等玩家選擇
   // ----------------------------------------------------------
   start: function () {
@@ -50,7 +50,11 @@ var Main = {
       UI.init();
       self._bindStartButtons();
     }, function (progress) {
-      // 載入進度回呼（可選擇性地更新載入畫面）
+      // 載入進度回呼：更新載入畫面顯示百分比
+      var el = document.querySelector('#loading-screen h2');
+      if (el) {
+        el.textContent = I18n.t('loading') + ' ' + Math.round(progress * 100) + '%';
+      }
     });
   },
 
@@ -306,11 +310,33 @@ var Main = {
 };
 
 // ============================================================
-// 頁面載入完成後啟動遊戲
+// 遊戲啟動（不依賴 load 事件，因為部分環境 load 事件不可靠）
+// 三重保險：
+//   1. readyState 已就緒 → 直接啟動
+//   2. DOMContentLoaded → 解析完成即啟動（不必等全部資源）
+//   3. 1 秒兜底計時器 → 無論如何都啟動一次
 // ============================================================
-window.addEventListener('load', function () {
-  Main.start();
-});
+(function () {
+  var booted = false;
+
+  function boot() {
+    if (booted) return; // 防止重複啟動
+    booted = true;
+    Main.start();
+  }
+
+  // 1. 若 DOM 已就緒（腳本執行到此時通常已完成解析），直接啟動
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    // setTimeout 0 確保在下一個事件循環啟動，讓所有模組先完成定義
+    setTimeout(boot, 0);
+  } else {
+    // 2. DOM 解析完成即啟動（不等圖片等資源）
+    document.addEventListener('DOMContentLoaded', boot);
+  }
+
+  // 3. 兜底：1 秒後無論如何都啟動（處理事件遺漏的極端情況）
+  setTimeout(boot, 1000);
+})();
 
 // 關閉頁面前存檔
 window.addEventListener('beforeunload', function () {
